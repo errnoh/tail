@@ -17,6 +17,9 @@ var (
 	debug = true
 )
 
+// TODO: jos trunccaa tiedostoa niin pitäisi seekata loppuun tj?
+// TODO: keino saada n edellistä riviä?
+
 type watched struct {
 	file   *os.File
 	reader *bufio.Reader
@@ -99,6 +102,7 @@ func Add(path string) (err error) {
 	if f, err = os.Open(path); err != nil {
 		return
 	}
+	f.Seek(0, 2) // End of file
 	watchlist[path] = watched{file: f, reader: bufio.NewReader(f)}
 
 	return watcher.WatchFlags(path, fsnotify.FSN_MODIFY)

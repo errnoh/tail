@@ -2,35 +2,31 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/errnoh/tail"
-	"io/ioutil"
-	"os"
 )
 
 func main() {
 	var (
-		f      *os.File
 		err    error
 		events <-chan tail.Update
 		errors <-chan error
 	)
 
+	flag.Parse()
+
 	events, errors = tail.Connect()
 
-	if f, err = ioutil.TempFile("", "append"); err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer os.Remove(f.Name())
-	defer f.Close()
-
-	if err = tail.Add(f.Name()); err != nil {
-		fmt.Println(err)
-		return
+	for _, filename := range flag.Args() {
+		if err = tail.Add(filename); err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer tail.Remove(filename)
+		fmt.Println("Listening for file", filename)
 	}
 
-	fmt.Println("Listening for file", f.Name())
 
 	for {
 		select {
