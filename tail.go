@@ -11,7 +11,7 @@ import (
 
 var (
 	watcher   *fsnotify.Watcher
-	c         chan []byte
+	c         chan Update
 	watchlist map[string]watched
 
 	debug = true
@@ -20,6 +20,12 @@ var (
 type watched struct {
 	file   *os.File
 	reader *bufio.Reader
+	buf    bytes.Buffer
+}
+
+type Update struct {
+	File     string
+	Contents []byte
 }
 
 func init() {
@@ -29,7 +35,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	c = make(chan []byte)
+	c = make(chan Update)
 	watchlist = make(map[string]watched)
 
 	go listen()
@@ -41,7 +47,6 @@ func listen() {
 		ok    bool
 		err   error
 		b     []byte
-		buf   bytes.Buffer
 		event *fsnotify.FileEvent
 
 		filename string
@@ -63,28 +68,28 @@ listenloop:
 			}
 			if b, err = file.reader.ReadBytes('\n'); err != nil {
 				if err == io.EOF {
-					buf.Write(b)
+					file.buf.Write(b)
 					continue
 				} else {
 					log.Printf("Tail: Error while reading buffer - %s", err.Error())
 					continue
 				}
 			}
-			buf.Write(b)
+			file.buf.Write(b)
 			if debug {
 				log.Printf("Sent: %s", string(b))
 			}
 			if len(b) > 0 {
-				c <- buf.Bytes()
-				buf.Reset()
+				c <- Update{filename, file.buf.Bytes()}
+				file.buf.Reset()
 			}
 		}
 	}
 
 }
 
-func Connect() (event <-chan []byte, err <-chan error) {
-	return (<-chan []byte)(c), (<-chan error)(watcher.Error)
+func Connect() (event <-chan Update, err <-chan error) {
+	return (<-chan Update)(c), (<-chan error)(watcher.Error)
 }
 
 // TODO: Return n previous lines of each file when Added

@@ -30,7 +30,7 @@ func TestEventReceive(t *testing.T) {
 	var (
 		f      *os.File
 		err    error
-		events <-chan []byte
+		events <-chan Update
 		errors <-chan error
 	)
 
@@ -62,7 +62,7 @@ func TestEventReceive(t *testing.T) {
 		select {
 		case e := <-events:
 			t.Logf("Received: %s", e)
-			if string(e) != "bacon\n" && string(e) != "crispy bacon\n" {
+			if string(e.Contents) != "bacon\n" && string(e.Contents) != "crispy bacon\n" {
 				t.Fatalf("Wrong input, expected either \"bacon\" or \"crispy bacon\"")
 			}
 		case err = <-errors:

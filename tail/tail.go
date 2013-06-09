@@ -12,7 +12,7 @@ func main() {
 	var (
 		f      *os.File
 		err    error
-		events <-chan []byte
+		events <-chan tail.Update
 		errors <-chan error
 	)
 
@@ -35,10 +35,10 @@ func main() {
 	for {
 		select {
 		case e := <-events:
-			if string(e) == "close\n" {
+			if string(e.Contents) == "close\n" {
 				return
 			}
-			fmt.Println("Received:",string(e),[]byte(e))
+			fmt.Printf("%s: %s", e.File, string(e.Contents))
 		case err = <-errors:
 			fmt.Println(err)
 			return
